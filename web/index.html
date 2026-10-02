@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base href="$FLUTTER_BASE_HREF">
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="Field Measure Pro - GPS and map-based field area measurement.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    #field-measure-place-search {
+      position: fixed;
+      z-index: 2147483647;
+      top: 14px;
+      left: 14px;
+      width: min(420px, calc(100vw - 82px));
+      font-family: Roboto, Arial, sans-serif;
+      pointer-events: auto;
+    }
+    #field-measure-place-search gmp-place-autocomplete {
+      display: block;
+      width: 100%;
+      --gmpx-color-surface: #fff;
+      --gmpx-color-on-surface: #202124;
+      --gmpx-color-primary: #1a73e8;
+      --gmpx-font-family-base: Roboto, Arial, sans-serif;
+    }
+    #field-measure-place-status {
+      display: none;
+      margin-top: 6px;
+      padding: 7px 10px;
+      border-radius: 4px;
+      background: #fff;
+      color: #b3261e;
+      font: 12px Roboto, Arial, sans-serif;
+      box-shadow: 0 1px 4px rgba(0,0,0,.25);
+    }
+    @media (max-width: 600px) {
+      #field-measure-place-search { top: 10px; left: 10px; width: calc(100vw - 70px); }
+    }
+  </style>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <script src="payment/razorpay.js"></script>
+  <script>
+    window.fieldMeasurePlaceSearchReady = false;
+
+    function fieldMeasureSendPlace(place) {
+      if (!place || !place.location) return false;
+      const location = place.location;
+      const lat = typeof location.lat === 'function' ? location.lat() : location.lat;
+      const lng = typeof location.lng === 'function' ? location.lng() : location.lng;
+      if (typeof lat !== 'number' || typeof lng !== 'number') return false;
+      window.postMessage('fieldmeasure-place:' + JSON.stringify({
+        lat: lat,
+        lng: lng,
+        name: place.displayName || 'Selected place',
+        address: place.formattedAddress || ''
+      }), '*');
+      return true;
+    }
+
+    async function fieldMeasurePlaceSearchInit() {
+      if (window.fieldMeasurePlaceSearchReady || !window.google || !google.maps) return;
+      window.fieldMeasurePlaceSearchReady = true;
+      try {
+        const { PlaceAutocompleteElement } = await google.maps.importLibrary('places');
+        const host = document.createElement('div');
+        host.id = 'field-measure-place-search';
+
+        const autocomplete = new PlaceAutocompleteElement();
+        autocomplete.placeholder = 'Search Google Maps';
+        autocomplete.setAttribute('aria-label', 'Search Google Maps');
+        host.appendChild(autocomplete);
+
+        const status = document.createElement('div');
+        status.id = 'field-measure-place-status';
+        host.appendChild(status);
+        document.body.appendChild(host);
+
+        autocomplete.addEventListener('gmp-select', async (event) => {
+          status.style.display = 'none';
+          try {
+            const placePrediction = event.placePrediction;
+            if (!placePrediction) throw new Error('No place prediction returned.');
+            const place = placePrediction.toPlace();
+            await place.fetchFields({
+              fields: ['displayName', 'formattedAddress', 'location', 'viewport']
+            });
+            if (!fieldMeasureSendPlace(place)) {
+              throw new Error('Selected place has no map location.');
+            }
+          } catch (error) {
+            console.error('Place selection failed:', error);
+            status.textContent = 'Could not open that place. Please select another result.';
+            status.style.display = 'block';
+          }
+        });
+
+        autocomplete.addEventListener('gmp-error', (event) => {
+          console.error('Google Places error:', event);
+          status.textContent = 'Google Places search is unavailable. Check Places API (New), billing, and API-key restrictions.';
+          status.style.display = 'block';
+        });
+      } catch (error) {
+        console.error('Google Places initialization failed:', error);
+        const status = document.createElement('div');
+        status.id = 'field-measure-place-status';
+        status.textContent = 'Google Places search could not load. Check the API key and Places API (New).';
+        status.style.display = 'block';
+        const host = document.createElement('div');
+        host.id = 'field-measure-place-search';
+        host.appendChild(status);
+        document.body.appendChild(host);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      const script = document.createElement('script');
+      script.src = 'https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&v=weekly&loading=async&callback=fieldMeasurePlaceSearchInit';
+      script.async = true;
+      script.defer = true;
+      script.onerror = function () {
+        console.error('Google Maps JavaScript API failed to load.');
+      };
+      document.head.appendChild(script);
+    });
+  </script>
+  <meta name="theme-color" content="#0F172A">
+  <title>Field Measure Pro</title>
+  <link rel="icon" type="image/png" href="favicon.png"/>
+  <link rel="manifest" href="manifest.json">
+</head>
+<body>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

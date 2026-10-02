@@ -1,0 +1,11 @@
+{
+  "name": "field-measure-pro-payments",
+  "private": true,
+  "type": "module",
+  "scripts": {"dev": "vercel dev"},
+  "dependencies": {
+    "@supabase/supabase-js": "^2.57.0",
+    "razorpay": "^2.9.6"
+  },
+  "devDependencies": {"vercel": "^48.0.0"}
+}
