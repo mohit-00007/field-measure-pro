@@ -1,0 +1,10 @@
+{
+  "name": "Field Measure Pro",
+  "short_name": "Field Measure Pro",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0F172A",
+  "theme_color": "#0F172A",
+  "description": "GPS and map-based field area measurement.",
+  "orientation": "any"
+}

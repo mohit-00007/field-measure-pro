@@ -1,0 +1,47 @@
+name: field_measure_pro
+description: "Field Measure Pro - GPS and map-based field area measurement for Android, Windows, and Web."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+  flutter: ">=3.10.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # Google Maps for browser (Web uses Maps JavaScript API)
+  google_maps_flutter: ^2.18.2
+
+  # Geolocation & Permissions
+  geolocator: ^10.1.0
+
+  # Cross-platform persistence
+  # PDF & Reporting
+  pdf: ^3.10.4
+  printing: ^5.11.0
+
+  # File handling & Sharing
+  share_plus: ^10.1.4
+  file_picker: ^11.0.3
+
+  # State Management & Utilities
+  provider: ^6.1.1
+  intl: ^0.20.3
+  shared_preferences: ^2.5.4
+  cross_file: ^0.3.4+2
+  cupertino_icons: ^1.0.6
+  http: ^1.5.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/

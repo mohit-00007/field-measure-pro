@@ -1,0 +1,74 @@
+name: Deploy Flutter Web
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.5'
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Configure Google Maps API key
+        env:
+          GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          p = Path('web/index.html')
+          s = p.read_text()
+          key = os.environ.get('GOOGLE_MAPS_API_KEY', '').strip()
+          if not key:
+              raise SystemExit('GOOGLE_MAPS_API_KEY repository secret is missing.')
+          s = s.replace('YOUR_GOOGLE_MAPS_API_KEY', key)
+          p.write_text(s)
+          PY
+
+      - name: Build Flutter Web
+        env:
+          FMP_API_BASE_URL: ${{ vars.FMP_API_BASE_URL }}
+        run: |
+          if [ -z "$FMP_API_BASE_URL" ]; then echo 'FMP_API_BASE_URL repository variable is missing.'; exit 1; fi
+          flutter build web --release --base-href "/field-measure-pro/" --dart-define=FMP_API_BASE_URL="$FMP_API_BASE_URL"
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      pages: write
+      id-token: write
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
